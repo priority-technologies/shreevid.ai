@@ -1,0 +1,16 @@
+# Ignore everything by default
+*
+
+# Include only backend files
+!backend/
+!backend/**
+
+# Exclude node_modules and dev files from backend
+backend/node_modules/
+backend/.env
+backend/.env.local
+backend/**/*.log
+
+# Include Dockerfile
+!Dockerfile
+!.dockerignore

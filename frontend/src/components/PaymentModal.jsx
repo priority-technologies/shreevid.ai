@@ -1,30 +1,35 @@
-import { useState } from 'react';
-import axios from 'axios';
-import { X, Loader, Check, AlertCircle, Eye, EyeOff } from 'lucide-react';
-import '../styles/PaymentModal.css';
+import { useState } from "react";
+import axios from "axios";
+import { X, Loader, Check, AlertCircle, Eye, EyeOff } from "lucide-react";
+import "../styles/PaymentModal.css";
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
-export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }) {
-  const [step, setStep] = useState('method'); // method, details, processing, success
-  const [paymentMethod, setPaymentMethod] = useState('credit_card');
+export default function PaymentModal({
+  isOpen,
+  onClose,
+  packageInfo,
+  onSuccess,
+}) {
+  const [step, setStep] = useState("method"); // method | details | success
+  const [paymentMethod, setPaymentMethod] = useState("credit_card");
   const [paymentDetails, setPaymentDetails] = useState({});
   const [showCVV, setShowCVV] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [paymentMethods, setPaymentMethods] = useState([]);
-  const [transactionId, setTransactionId] = useState('');
+  const [transactionId, setTransactionId] = useState("");
 
-  // Fetch payment methods on mount
   const fetchPaymentMethods = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await axios.get(`${API_BASE_URL}/payment/methods`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setPaymentMethods(response.data);
     } catch (err) {
-      console.error('Failed to fetch payment methods:', err);
+      console.error("Failed to fetch payment methods:", err);
     }
   };
 
@@ -32,54 +37,54 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
 
   const handlePaymentMethodChange = (e) => {
     setPaymentMethod(e.target.value);
-    setError('');
+    setError("");
     setPaymentDetails({});
   };
 
   const handleDetailChange = (field, value) => {
-    setPaymentDetails(prev => ({
+    setPaymentDetails((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
-    setError('');
+    setError("");
   };
 
   const validateDetails = () => {
     const methodRequirements = {
-      credit_card: ['cardNumber', 'cardName', 'expiryDate', 'cvv'],
-      debit_card: ['cardNumber', 'cardName', 'expiryDate', 'cvv'],
-      upi: ['upiId'],
-      net_banking: ['bankName', 'accountNumber'],
-      paypal: ['email'],
-      stripe: ['cardNumber', 'cardName', 'expiryDate', 'cvv'],
+      credit_card: ["cardNumber", "cardName", "expiryDate", "cvv"],
+      debit_card: ["cardNumber", "cardName", "expiryDate", "cvv"],
+      upi: ["upiId"],
+      net_banking: ["bankName", "accountNumber"],
+      paypal: ["email"],
+      stripe: ["cardNumber", "cardName", "expiryDate", "cvv"],
     };
 
     const required = methodRequirements[paymentMethod] || [];
     for (const field of required) {
       if (!paymentDetails[field]) {
-        setError(`${field.replace(/([A-Z])/g, ' $1').trim()} is required`);
+        setError(`${field.replace(/([A-Z])/g, " $1").trim()} is required`);
         return false;
       }
     }
 
-    // Validate card number
     if (paymentDetails.cardNumber) {
-      const cardNum = paymentDetails.cardNumber.replace(/\s/g, '');
+      const cardNum = paymentDetails.cardNumber.replace(/\s/g, "");
       if (!/^\d{13,19}$/.test(cardNum)) {
-        setError('Invalid card number (13-19 digits)');
+        setError("Invalid card number (13-19 digits)");
         return false;
       }
     }
 
-    // Validate CVV
     if (paymentDetails.cvv && !/^\d{3,4}$/.test(paymentDetails.cvv)) {
-      setError('Invalid CVV (3-4 digits)');
+      setError("Invalid CVV (3-4 digits)");
       return false;
     }
 
-    // Validate expiry
-    if (paymentDetails.expiryDate && !/^\d{2}\/\d{2}$/.test(paymentDetails.expiryDate)) {
-      setError('Invalid expiry date (use MM/YY format)');
+    if (
+      paymentDetails.expiryDate &&
+      !/^\d{2}\/\d{2}$/.test(paymentDetails.expiryDate)
+    ) {
+      setError("Invalid expiry date (use MM/YY format)");
       return false;
     }
 
@@ -87,49 +92,43 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
   };
 
   const handleProcessPayment = async () => {
-    if (!validateDetails()) return;
-
+    // Use Stripe Checkout for all payments
     setLoading(true);
-    setError('');
+    setError("");
 
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await axios.post(
-        `${API_BASE_URL}/payment/process`,
+        `${API_BASE_URL}/payment/create-checkout-session`,
         {
-          method: paymentMethod,
-          amount: packageInfo.price,
-          paymentDetails,
           packageId: packageInfo.id,
+          credits: packageInfo.credits,
+          amount: packageInfo.price,
         },
-        { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      if (response.data.status === 'success') {
-        setTransactionId(response.data.transactionId);
-        setStep('success');
-        if (onSuccess) {
-          setTimeout(() => onSuccess(response.data), 2000);
-        }
+      if (response.data.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = response.data.url;
       } else {
-        setError(response.data.message || 'Payment failed');
-        setStep('details');
+        setError("Failed to initialize payment");
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'Payment processing failed');
-      setStep('details');
-    } finally {
+      setError(err.response?.data?.error || "Payment initialization failed");
       setLoading(false);
     }
   };
 
-  // Render based on step
-  if (step === 'method') {
+  if (step === "method") {
     return (
       <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content payment-modal" onClick={e => e.stopPropagation()}>
+        <div
+          className="modal-content payment-modal"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="modal-header">
-            <h2>Select Payment Method</h2>
+            <h2>Complete Your Purchase</h2>
             <button onClick={onClose} className="modal-close">
               <X size={24} />
             </button>
@@ -139,48 +138,51 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
             <div className="package-summary">
               <h3>{packageInfo.name} Package</h3>
               <p className="price">${packageInfo.price.toFixed(2)}</p>
-              <p className="credits">{packageInfo.credits.toLocaleString()} Credits</p>
+              <p className="credits">
+                {packageInfo.credits.toLocaleString()} Credits
+              </p>
             </div>
 
-            <div className="payment-methods-list">
-              <h4>Choose Payment Method:</h4>
-              <div className="methods-grid">
-                {[
-                  { id: 'credit_card', name: 'Credit Card', icon: '💳' },
-                  { id: 'debit_card', name: 'Debit Card', icon: '💳' },
-                  { id: 'upi', name: 'UPI', icon: '📱', regionHint: 'India' },
-                  { id: 'net_banking', name: 'Net Banking', icon: '🏦', regionHint: 'India' },
-                  { id: 'paypal', name: 'PayPal', icon: '🅿️' },
-                ].map(method => (
-                  <button
-                    key={method.id}
-                    onClick={() => {
-                      setPaymentMethod(method.id);
-                      setStep('details');
-                    }}
-                    className={`method-card ${paymentMethod === method.id ? 'active' : ''}`}
-                  >
-                    <span className="method-icon">{method.icon}</span>
-                    <span className="method-name">{method.name}</span>
-                    {method.regionHint && <span className="region-hint">{method.regionHint}</span>}
-                  </button>
-                ))}
-              </div>
+            <div className="stripe-checkout-info">
+              <h4>💳 Secure Checkout with Stripe</h4>
+              <p>
+                You will be redirected to Stripe's secure payment page to complete your purchase.
+                Stripe accepts all major credit and debit cards.
+              </p>
+              
+              {error && (
+                <div className="error-message">
+                  <AlertCircle size={16} />
+                  {error}
+                </div>
+              )}
             </div>
 
             <p className="payment-info">
-              💡 <strong>Secure Payment:</strong> All transactions are encrypted and secure. No payment details are stored.
+              🔒 <strong>Secure Payment:</strong> All transactions are encrypted
+              and processed securely by Stripe. We never store your payment details.
             </p>
           </div>
 
           <div className="modal-footer">
-            <button onClick={onClose} className="btn btn-secondary">Cancel</button>
-            <button 
-              onClick={() => setStep('details')} 
+            <button onClick={onClose} className="btn btn-secondary" disabled={loading}>
+              Cancel
+            </button>
+            <button
+              onClick={handleProcessPayment}
               className="btn btn-primary"
-              disabled={!paymentMethod}
+              disabled={loading}
             >
-              Continue
+              {loading ? (
+                <>
+                  <Loader className="spinner" size={16} />
+                  Redirecting to Stripe...
+                </>
+              ) : (
+                <>
+                  Continue to Stripe Checkout
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -188,10 +190,13 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
     );
   }
 
-  if (step === 'details') {
+  if (step === "details") {
     return (
       <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content payment-modal large" onClick={e => e.stopPropagation()}>
+        <div
+          className="modal-content payment-modal large"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="modal-header">
             <h2>Enter Payment Details</h2>
             <button onClick={onClose} className="modal-close">
@@ -201,16 +206,19 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
 
           <div className="modal-body">
             <div className="payment-form">
-              {/* Card Details */}
-              {['credit_card', 'debit_card', 'stripe'].includes(paymentMethod) && (
+              {["credit_card", "debit_card", "stripe"].includes(
+                paymentMethod,
+              ) && (
                 <>
                   <div className="form-group">
                     <label>Cardholder Name</label>
                     <input
                       type="text"
                       placeholder="John Doe"
-                      value={paymentDetails.cardName || ''}
-                      onChange={(e) => handleDetailChange('cardName', e.target.value)}
+                      value={paymentDetails.cardName || ""}
+                      onChange={(e) =>
+                        handleDetailChange("cardName", e.target.value)
+                      }
                       className="form-input"
                     />
                   </div>
@@ -220,8 +228,10 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
                     <input
                       type="text"
                       placeholder="1234 5678 9012 3456"
-                      value={paymentDetails.cardNumber || ''}
-                      onChange={(e) => handleDetailChange('cardNumber', e.target.value)}
+                      value={paymentDetails.cardNumber || ""}
+                      onChange={(e) =>
+                        handleDetailChange("cardNumber", e.target.value)
+                      }
                       className="form-input"
                       maxLength="19"
                     />
@@ -233,20 +243,25 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
                       <input
                         type="text"
                         placeholder="12/25"
-                        value={paymentDetails.expiryDate || ''}
-                        onChange={(e) => handleDetailChange('expiryDate', e.target.value)}
+                        value={paymentDetails.expiryDate || ""}
+                        onChange={(e) =>
+                          handleDetailChange("expiryDate", e.target.value)
+                        }
                         className="form-input"
                         maxLength="5"
                       />
                     </div>
+
                     <div className="form-group">
                       <label>CVV</label>
                       <div className="cvv-input-wrapper">
                         <input
-                          type={showCVV ? 'text' : 'password'}
+                          type={showCVV ? "text" : "password"}
                           placeholder="123"
-                          value={paymentDetails.cvv || ''}
-                          onChange={(e) => handleDetailChange('cvv', e.target.value)}
+                          value={paymentDetails.cvv || ""}
+                          onChange={(e) =>
+                            handleDetailChange("cvv", e.target.value)
+                          }
                           className="form-input"
                           maxLength="4"
                         />
@@ -263,28 +278,30 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
                 </>
               )}
 
-              {/* UPI */}
-              {paymentMethod === 'upi' && (
+              {paymentMethod === "upi" && (
                 <div className="form-group">
                   <label>UPI ID</label>
                   <input
                     type="email"
                     placeholder="yourname@upi"
-                    value={paymentDetails.upiId || ''}
-                    onChange={(e) => handleDetailChange('upiId', e.target.value)}
+                    value={paymentDetails.upiId || ""}
+                    onChange={(e) =>
+                      handleDetailChange("upiId", e.target.value)
+                    }
                     className="form-input"
                   />
                 </div>
               )}
 
-              {/* Net Banking */}
-              {paymentMethod === 'net_banking' && (
+              {paymentMethod === "net_banking" && (
                 <>
                   <div className="form-group">
                     <label>Bank Name</label>
                     <select
-                      value={paymentDetails.bankName || ''}
-                      onChange={(e) => handleDetailChange('bankName', e.target.value)}
+                      value={paymentDetails.bankName || ""}
+                      onChange={(e) =>
+                        handleDetailChange("bankName", e.target.value)
+                      }
                       className="form-input"
                     >
                       <option value="">Select Bank</option>
@@ -294,28 +311,32 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
                       <option value="axis">Axis Bank</option>
                     </select>
                   </div>
+
                   <div className="form-group">
                     <label>Account Number</label>
                     <input
                       type="text"
                       placeholder="Your account number"
-                      value={paymentDetails.accountNumber || ''}
-                      onChange={(e) => handleDetailChange('accountNumber', e.target.value)}
+                      value={paymentDetails.accountNumber || ""}
+                      onChange={(e) =>
+                        handleDetailChange("accountNumber", e.target.value)
+                      }
                       className="form-input"
                     />
                   </div>
                 </>
               )}
 
-              {/* PayPal */}
-              {paymentMethod === 'paypal' && (
+              {paymentMethod === "paypal" && (
                 <div className="form-group">
                   <label>PayPal Email</label>
                   <input
                     type="email"
                     placeholder="your@email.com"
-                    value={paymentDetails.email || ''}
-                    onChange={(e) => handleDetailChange('email', e.target.value)}
+                    value={paymentDetails.email || ""}
+                    onChange={(e) =>
+                      handleDetailChange("email", e.target.value)
+                    }
                     className="form-input"
                   />
                 </div>
@@ -335,22 +356,24 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
                 </div>
                 <div className="summary-row">
                   <span>You'll receive:</span>
-                  <strong>{packageInfo.credits.toLocaleString()} Credits</strong>
+                  <strong>
+                    {packageInfo.credits.toLocaleString()} Credits
+                  </strong>
                 </div>
               </div>
             </div>
           </div>
 
           <div className="modal-footer">
-            <button 
-              onClick={() => setStep('method')} 
+            <button
+              onClick={() => setStep("method")}
               className="btn btn-secondary"
               disabled={loading}
             >
               Back
             </button>
-            <button 
-              onClick={handleProcessPayment} 
+            <button
+              onClick={handleProcessPayment}
               className="btn btn-primary"
               disabled={loading}
             >
@@ -360,9 +383,7 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
                   Processing Payment...
                 </>
               ) : (
-                <>
-                  Pay ${packageInfo.price.toFixed(2)}
-                </>
+                <>Pay ${packageInfo.price.toFixed(2)}</>
               )}
             </button>
           </div>
@@ -371,16 +392,19 @@ export default function PaymentModal({ isOpen, onClose, packageInfo, onSuccess }
     );
   }
 
-  if (step === 'success') {
+  if (step === "success") {
     return (
       <div className="modal-overlay" onClick={onClose}>
-        <div className="modal-content payment-modal success" onClick={e => e.stopPropagation()}>
+        <div
+          className="modal-content payment-modal success"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="success-icon">
             <Check size={64} />
           </div>
           <h2>Payment Successful!</h2>
           <p>Your credits have been added to your account.</p>
-          
+
           <div className="transaction-details">
             <div className="detail">
               <span>Transaction ID:</span>

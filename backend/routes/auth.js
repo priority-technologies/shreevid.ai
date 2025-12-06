@@ -8,12 +8,14 @@ const Usage = require('../models/Usage');
 
 const router = express.Router();
 
-// Email configuration (mock - update with real Gmail)
+// Email configuration with Gmail SMTP
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT) || 587,
+  secure: false, // true for 465, false for other ports
   auth: {
-    user: process.env.EMAIL_USER || 'demo@gmail.com',
-    pass: process.env.EMAIL_PASS || 'demo_password',
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD,
   },
 });
 
@@ -24,17 +26,27 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 const sendEmail = async (email, subject, html) => {
   try {
     await transporter.sendMail({
-      from: process.env.EMAIL_USER || 'shreenika@prioritytech.com',
+      from: `"Shreevid.ai" <${process.env.SMTP_USER}>`,
       to: email,
       subject,
       html,
     });
+    console.log(`✓ Email sent to ${email}: ${subject}`);
     return true;
   } catch (error) {
-    console.log('Email send failed (mock mode):', error.message);
-    return true; // Allow in demo mode
+    console.error('Email send failed:', error.message);
+    // In production, we should still return false and handle it
+    return false;
   }
 };
+
+// Admin email list
+const ADMIN_EMAILS = [
+  'info@prioritytechnologiess.com',
+  'priorityassociates8@gmail.com',
+  'rupaliatre8@gmail.com',
+  'prax420@gmail.com'
+];
 
 // SIGNUP
 router.post('/signup', async (req, res) => {
@@ -53,6 +65,9 @@ router.post('/signup', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOTP();
 
+    // Check if email is in admin list
+    const isAdminEmail = ADMIN_EMAILS.includes(email.toLowerCase());
+
     const user = new User({
       email,
       password: hashedPassword,
@@ -61,6 +76,8 @@ router.post('/signup', async (req, res) => {
       otpCode: otp,
       otpExpiry: new Date(Date.now() + 10 * 60 * 1000), // 10 mins
       authProvider: 'email',
+      isAdmin: isAdminEmail, // Auto-grant admin if in list
+      role: isAdminEmail ? 'admin' : 'user', // Set role to admin if in admin list
     });
 
     await user.save();

@@ -5,6 +5,7 @@ const Transaction = require('../models/Transaction');
 const { CREDIT_COSTS } = require('../config/credits');
 const { processPayment, validatePaymentDetails } = require('../config/mockPayment');
 const { verifyToken } = require('../middleware/auth');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 /**
  * Get payment methods available
@@ -214,6 +215,198 @@ router.post('/validate', verifyToken, (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ error: 'Validation failed' });
+  }
+});
+
+/**
+ * Create Stripe Checkout Session
+ * POST /api/payment/create-checkout-session
+ */
+router.post('/create-checkout-session', verifyToken, async (req, res) => {
+  try {
+    const { packageId, credits, amount } = req.body;
+    const userId = req.userId;
+
+    // Get user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Calculate amount if not provided (based on credit pricing)
+    // Pricing: $12 for 625 credits = $0.0192 per credit
+    let finalAmount = amount;
+    if (!finalAmount || isNaN(finalAmount)) {
+      finalAmount = Math.round((credits / 625) * 12 * 100) / 100; // Round to 2 decimals
+    }
+
+    // Validate amount
+    if (!finalAmount || finalAmount <= 0 || isNaN(finalAmount)) {
+      return res.status(400).json({ 
+        error: 'Invalid amount', 
+        debug: { credits, amount, finalAmount } 
+      });
+    }
+
+    // Create Stripe checkout session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `${credits} Credits`,
+              description: `Purchase ${credits} credits for Shreevid.ai video generation`,
+            },
+            unit_amount: Math.round(finalAmount * 100), // Convert to cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: `${process.env.FRONTEND_URL}/#/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.FRONTEND_URL}/#/dashboard?payment=cancelled`,
+      client_reference_id: userId.toString(),
+      metadata: {
+        userId: userId.toString(),
+        credits: credits.toString(),
+        packageId: packageId || 'custom',
+      },
+    });
+
+    res.json({
+      sessionId: session.id,
+      url: session.url,
+    });
+  } catch (error) {
+    console.error('Stripe checkout error:', error);
+    res.status(500).json({
+      error: 'Failed to create checkout session',
+      details: error.message,
+    });
+  }
+});
+
+/**
+ * Stripe Webhook - Handle successful payments
+ * POST /api/payment/webhook
+ */
+router.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    // Verify webhook signature (you'll need to set STRIPE_WEBHOOK_SECRET)
+    event = req.body;
+
+    // Handle the event
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+
+      // Get user and credit info from metadata
+      const userId = session.metadata.userId;
+      const credits = parseInt(session.metadata.credits);
+      const amount = session.amount_total / 100; // Convert from cents
+
+      // Get user
+      const user = await User.findById(userId);
+      if (user) {
+        // Add credits
+        await user.addCredits(credits, `Stripe payment: $${amount}`);
+
+        // Create transaction record
+        await Transaction.create({
+          userId,
+          type: 'purchase',
+          amount: credits,
+          balanceBefore: user.credits - credits,
+          balanceAfter: user.credits,
+          description: `Credit purchase: $${amount} via Stripe`,
+          paymentMethod: 'stripe',
+          paymentId: session.id,
+          paymentStatus: 'completed',
+          amountPaid: amount,
+          currency: 'usd',
+        });
+
+        console.log(`✓ Added ${credits} credits to user ${userId}`);
+      }
+    }
+
+    res.json({ received: true });
+  } catch (error) {
+    console.error('Webhook error:', error);
+    res.status(400).send(`Webhook Error: ${error.message}`);
+  }
+});
+
+/**
+ * Verify payment session (called from frontend after redirect)
+ * GET /api/payment/verify-session/:sessionId
+ */
+router.get('/verify-session/:sessionId', verifyToken, async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const userId = req.userId;
+
+    // Retrieve the session from Stripe
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    if (session.payment_status === 'paid' && session.metadata.userId === userId.toString()) {
+      // Check if we already processed this
+      const existingTransaction = await Transaction.findOne({
+        paymentId: sessionId,
+        userId,
+      });
+
+      if (existingTransaction) {
+        return res.json({
+          status: 'already_processed',
+          credits: existingTransaction.amount,
+          message: 'Payment already processed',
+        });
+      }
+
+      // Process the payment if not already done (backup to webhook)
+      const credits = parseInt(session.metadata.credits);
+      const amount = session.amount_total / 100;
+
+      const user = await User.findById(userId);
+      await user.addCredits(credits, `Stripe payment: $${amount}`);
+
+      await Transaction.create({
+        userId,
+        type: 'purchase',
+        amount: credits,
+        balanceBefore: user.credits - credits,
+        balanceAfter: user.credits,
+        description: `Credit purchase: $${amount} via Stripe`,
+        paymentMethod: 'stripe',
+        paymentId: sessionId,
+        paymentStatus: 'completed',
+        amountPaid: amount,
+        currency: 'usd',
+      });
+
+      res.json({
+        status: 'success',
+        credits,
+        newBalance: user.credits,
+        message: `Successfully added ${credits} credits!`,
+      });
+    } else {
+      res.status(400).json({
+        status: 'failed',
+        error: 'Payment not completed or invalid session',
+      });
+    }
+  } catch (error) {
+    console.error('Session verification error:', error);
+    res.status(500).json({
+      error: 'Failed to verify payment session',
+      details: error.message,
+    });
   }
 });
 

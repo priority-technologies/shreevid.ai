@@ -17,6 +17,7 @@ const userSchema = new mongoose.Schema(
     
     // Admin Access
     isAdmin: { type: Boolean, default: false },
+    role: { type: String, enum: ['user', 'admin'], default: 'user' },
     
     // Prepaid Credit System
     credits: { type: Number, default: 125 }, // Free credits on signup

@@ -1,0 +1,176 @@
+/* Global Responsive Enhancements */
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+  button,
+  .btn,
+  .nav-item,
+  .tab,
+  .settings-tab,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Improve touch scrolling */
+  .modal-content,
+  .api-usage-modal-content,
+  .upgrade-modal-content,
+  .table-container {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Prevent zoom on input focus */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Landscape mode optimizations */
+@media (max-width: 968px) and (orientation: landscape) {
+  .upgrade-modal-content,
+  .api-usage-modal-content {
+    max-height: 85vh;
+  }
+  
+  .sidebar {
+    width: 200px;
+  }
+  
+  .page-content {
+    padding: 16px;
+  }
+}
+
+/* Small mobile landscape */
+@media (max-width: 640px) and (orientation: landscape) {
+  .upgrade-modal-header {
+    padding: 20px 24px 16px;
+  }
+  
+  .upgrade-icon {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 12px;
+  }
+  
+  .upgrade-benefits {
+    padding: 16px 24px;
+  }
+  
+  .benefits-grid {
+    gap: 12px;
+  }
+  
+  .benefit-item {
+    padding: 12px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 320px) {
+  .page-title {
+    font-size: 20px !important;
+  }
+  
+  .section-title {
+    font-size: 16px !important;
+  }
+  
+  .btn {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .pricing-card {
+    padding: 14px 10px;
+  }
+  
+  .modal-content {
+    padding: 16px;
+  }
+}
+
+/* iPad and tablet portrait */
+@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+  .pricing-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .api-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* iPad Pro and large tablets */
+@media (min-width: 1024px) and (max-width: 1366px) {
+  .dashboard-container {
+    font-size: 15px;
+  }
+  
+  .sidebar {
+    width: 240px;
+  }
+  
+  .main-content {
+    margin-left: 240px;
+  }
+}
+
+/* Print styles */
+@media print {
+  .sidebar,
+  .menu-toggle,
+  .top-bar,
+  button,
+  .btn {
+    display: none !important;
+  }
+  
+  .main-content {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .page-content {
+    padding: 0;
+  }
+}
+
+/* High DPI screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .logo-icon,
+  .stat-icon,
+  .benefit-icon,
+  .metric-icon {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Dark mode support (for future) */
+@media (prefers-color-scheme: dark) {
+  /* Already dark theme, but we can enhance contrast */
+  .modal-overlay,
+  .upgrade-modal-overlay,
+  .api-usage-modal-overlay {
+    background: rgba(0, 0, 0, 0.9);
+  }
+}

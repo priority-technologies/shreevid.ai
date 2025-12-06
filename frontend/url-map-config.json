@@ -1,0 +1,10 @@
+{
+  "kind": "compute#urlMap",
+  "name": "shreevid-frontend-map",
+  "defaultService": "global/backendBuckets/shreevid-frontend-bb",
+  "defaultRouteAction": {
+    "urlRewrite": {
+      "pathPrefixRewrite": "/index.html"
+    }
+  }
+}

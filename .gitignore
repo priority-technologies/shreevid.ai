@@ -8,9 +8,15 @@ backend/dist/
 
 # env/secrets
 .env
+.env.production
+.env.local
+.env.*.local
 frontend/.env
+frontend/.env.production
 backend/.env
+backend/.env.production
 backend/credentials/*.json
+**/deploy-backend-stripe.ps1
 
 # uploads/cache
 backend/uploads/

@@ -390,11 +390,15 @@ router.get('/dashboard/stats', adminAuth, async (req, res) => {
     const creditsData = await User.aggregate([
       { $group: { 
         _id: null, 
-        totalCreditsIssued: { $sum: '$totalCreditsEarned' },
+        totalCreditsPurchased: { $sum: { $subtract: ['$totalCreditsEarned', 125] } }, // Exclude free signup credits
         totalCreditsSpent: { $sum: '$totalCreditsSpent' },
-        totalCreditsAvailable: { $sum: '$credits' }
+        totalCreditsAvailable: { $sum: '$credits' },
+        totalFreeCreditsGiven: { $sum: { $cond: [{ $eq: ['$totalCreditsEarned', 125] }, 125, 0] } }
       }}
     ]);
+    
+    // Calculate actual credits issued (purchased + signup bonuses)
+    const actualCreditsIssued = (creditsData[0]?.totalCreditsPurchased || 0) + (totalUsers * 125);
 
     // Recent activity
     const recentUsers = await User.find().sort({ createdAt: -1 }).limit(5).select('email firstName lastName createdAt');
@@ -415,10 +419,18 @@ router.get('/dashboard/stats', adminAuth, async (req, res) => {
         total: revenueData[0]?.total || 0,
         currency: 'INR'
       },
-      credits: creditsData[0] || {
-        totalCreditsIssued: 0,
-        totalCreditsSpent: 0,
-        totalCreditsAvailable: 0
+      credits: {
+        totalCreditsAvailable: creditsData[0]?.totalCreditsAvailable || 0, // Current balance across all users
+        totalCreditsIssued: actualCreditsIssued || (totalUsers * 125), // Total given (purchases + signup)
+        totalCreditsPurchased: creditsData[0]?.totalCreditsPurchased || 0, // Paid credits only
+        totalCreditsSpent: creditsData[0]?.totalCreditsSpent || 0, // Total used
+        freeSignupCredits: totalUsers * 125, // 125 per user signup
+        breakdown: {
+          purchased: creditsData[0]?.totalCreditsPurchased || 0,
+          signupBonus: totalUsers * 125,
+          spent: creditsData[0]?.totalCreditsSpent || 0,
+          remaining: creditsData[0]?.totalCreditsAvailable || 0
+        }
       }
     });
   } catch (error) {

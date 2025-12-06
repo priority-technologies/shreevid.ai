@@ -1,6 +1,7 @@
 const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const watermarkConfig = require('../config/watermark');
 
 /**
  * FFmpeg Video Composer Service
@@ -14,14 +15,19 @@ class VideoComposerService {
     
     // Watermark configuration
     this.watermark = {
-      text: process.env.WATERMARK_TEXT || 'Shreevid.ai',
+      mode: watermarkConfig.mode || 'logo',
+      text: process.env.WATERMARK_TEXT || watermarkConfig.text || 'Shreevid.ai',
       position: process.env.WATERMARK_POSITION || 'bottom-right',
-      offsetX: parseInt(process.env.WATERMARK_OFFSET_X) || 20,
-      offsetY: parseInt(process.env.WATERMARK_OFFSET_Y) || 20,
-      fontSize: parseInt(process.env.WATERMARK_FONT_SIZE) || 36,
-      fontColor: process.env.WATERMARK_FONT_COLOR || 'white',
+      offsetX: parseInt(process.env.WATERMARK_OFFSET_X) || watermarkConfig.position.offsetX || 20,
+      offsetY: parseInt(process.env.WATERMARK_OFFSET_Y) || watermarkConfig.position.offsetY || 20,
+      fontSize: parseInt(process.env.WATERMARK_FONT_SIZE) || watermarkConfig.textStyle.fontSize || 36,
+      fontColor: process.env.WATERMARK_FONT_COLOR || watermarkConfig.textStyle.fontColor || 'white',
       bgColor: process.env.WATERMARK_BG_COLOR || 'black',
-      bgOpacity: parseFloat(process.env.WATERMARK_BG_OPACITY) || 0.3
+      bgOpacity: parseFloat(process.env.WATERMARK_BG_OPACITY) || 0.3,
+      logoPath: watermarkConfig.logo.path,
+      logoWidth: watermarkConfig.logo.width || 120,
+      logoHeight: watermarkConfig.logo.height || 120,
+      logoOpacity: watermarkConfig.logo.opacity || 0.85
     };
 
     this.validateFFmpeg();
@@ -144,29 +150,58 @@ class VideoComposerService {
         }
 
         console.log('[VideoComposer] Adding watermark to video...');
-        console.log(`  Text: ${this.watermark.text}`);
-        console.log(`  Position: ${this.watermark.position}`);
-
+        
         // Ensure output directory exists
         const dir = path.dirname(outputPath);
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });
         }
 
-        // Calculate position coordinates
-        const posCoords = this.calculateWatermarkPosition(this.watermark.position);
+        let args;
 
-        // Build drawtext filter
-        const drawtext = `drawtext=text='${this.watermark.text}':fontsize=${this.watermark.fontSize}:fontcolor=${this.watermark.fontColor}:x=${posCoords.x}:y=${posCoords.y}:fontfile=/path/to/font.ttf`;
+        // Check if using logo or text watermark
+        if (this.watermark.mode === 'logo' && this.watermark.logoPath && fs.existsSync(this.watermark.logoPath)) {
+          console.log(`  Logo: ${this.watermark.logoPath}`);
+          console.log(`  Size: ${this.watermark.logoWidth}x${this.watermark.logoHeight}`);
+          console.log(`  Position: ${this.watermark.position}`);
 
-        // FFmpeg command: add text watermark
-        const args = [
-          '-i', inputPath,
-          '-vf', drawtext,
-          '-codec:a', 'copy',       // Copy audio codec
-          '-y',                      // Overwrite output
-          outputPath
-        ];
+          // Calculate logo position
+          const posCoords = this.calculateLogoPosition(this.watermark.position);
+
+          // FFmpeg command with logo overlay
+          args = [
+            '-i', inputPath,
+            '-i', this.watermark.logoPath,
+            '-filter_complex', 
+            `[1:v]scale=${this.watermark.logoWidth}:${this.watermark.logoHeight},format=rgba,colorchannelmixer=aa=${this.watermark.logoOpacity}[logo];[0:v][logo]overlay=${posCoords.x}:${posCoords.y}`,
+            '-codec:a', 'copy',
+            '-y',
+            outputPath
+          ];
+
+          console.log('[VideoComposer] Using logo watermark');
+        } else {
+          // Fallback to text watermark
+          console.log(`  Text: ${this.watermark.text}`);
+          console.log(`  Position: ${this.watermark.position}`);
+
+          // Calculate position coordinates
+          const posCoords = this.calculateWatermarkPosition(this.watermark.position);
+
+          // Build drawtext filter (simplified - no font file required)
+          const drawtext = `drawtext=text='${this.watermark.text}':fontsize=${this.watermark.fontSize}:fontcolor=${this.watermark.fontColor}@0.9:x=${posCoords.x}:y=${posCoords.y}:box=1:boxcolor=${this.watermark.bgColor}@${this.watermark.bgOpacity}:boxborderw=10`;
+
+          // FFmpeg command: add text watermark
+          args = [
+            '-i', inputPath,
+            '-vf', drawtext,
+            '-codec:a', 'copy',
+            '-y',
+            outputPath
+          ];
+
+          console.log('[VideoComposer] Using text watermark (logo not available)');
+        }
 
         console.log('[VideoComposer] Executing FFmpeg watermark...');
         const process = spawn(this.ffmpegPath, args);
@@ -249,6 +284,22 @@ class VideoComposerService {
       'bottom-right': { x: `w-tw-${this.watermark.offsetX}`, y: `h-th-${this.watermark.offsetY}` },
       'bottom-left': { x: this.watermark.offsetX, y: `h-th-${this.watermark.offsetY}` },
       'top-right': { x: `w-tw-${this.watermark.offsetX}`, y: this.watermark.offsetY },
+      'top-left': { x: this.watermark.offsetX, y: this.watermark.offsetY }
+    };
+
+    return positions[position] || positions['bottom-right'];
+  }
+
+  /**
+   * Calculate logo position coordinates for overlay filter
+   * @param {string} position - Position (bottom-right, bottom-left, top-right, top-left)
+   * @returns {object} - {x, y} coordinates for FFmpeg overlay
+   */
+  calculateLogoPosition(position) {
+    const positions = {
+      'bottom-right': { x: `W-w-${this.watermark.offsetX}`, y: `H-h-${this.watermark.offsetY}` },
+      'bottom-left': { x: this.watermark.offsetX, y: `H-h-${this.watermark.offsetY}` },
+      'top-right': { x: `W-w-${this.watermark.offsetX}`, y: this.watermark.offsetY },
       'top-left': { x: this.watermark.offsetX, y: this.watermark.offsetY }
     };
 

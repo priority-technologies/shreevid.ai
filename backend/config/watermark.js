@@ -3,8 +3,13 @@
  * Handles watermark placement, text, and styling for video outputs
  */
 
+const path = require('path');
+
 module.exports = {
-  // Watermark text displayed on videos
+  // Watermark mode: 'logo' or 'text'
+  mode: "logo",
+  
+  // Watermark text displayed on videos (fallback if logo not available)
   text: "Shreevid.ai",
   
   // Position on video (bottom-right recommended for least intrusion)
@@ -26,12 +31,11 @@ module.exports = {
   
   // Logo styling (if using logo image)
   logo: {
-    // Path to logo file (will be set dynamically)
-    // Use light logo for dark backgrounds (videos typically have dark areas)
-    path: null, // Set at runtime based on video colors
-    width: 80,  // pixels
-    height: 80, // pixels
-    opacity: 0.9
+    // Path to logo file (White logo for better visibility on videos)
+    path: path.join(__dirname, '../../../frontend/public/White Icon.png'),
+    width: 120,  // pixels
+    height: 120, // pixels
+    opacity: 0.85
   },
   
   // Background behind text (for better visibility)

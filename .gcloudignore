@@ -1,0 +1,37 @@
+# This file specifies files that should not be uploaded to Google Cloud
+
+.gcloudignore
+.git
+.gitignore
+node_modules/
+npm-debug.log
+
+# Frontend build artifacts (will be deployed separately)
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+
+# Backend development files
+backend/node_modules/
+*.log
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+**/__tests__/
+**/*.test.js
+**/*.spec.js
+coverage/
+
+# Uploads directory (will use Cloud Storage instead)
+uploads/

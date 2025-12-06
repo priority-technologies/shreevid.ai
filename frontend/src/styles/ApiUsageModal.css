@@ -1,0 +1,298 @@
+/* API Usage Modal Styles */
+.api-usage-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.3s ease;
+  padding: 20px;
+}
+
+.api-usage-modal-content {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  border-radius: 24px;
+  max-width: 1200px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: slideUp 0.3s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.api-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #ffffff;
+  transition: all 0.3s ease;
+  z-index: 10;
+}
+
+.api-modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.api-modal-header {
+  padding: 48px 32px 32px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.api-modal-header h2 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.api-modal-header p {
+  font-size: 16px;
+  color: #9ca3af;
+  margin: 0;
+}
+
+.api-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  padding: 32px;
+  border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.api-metric-card {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: all 0.3s ease;
+}
+
+.api-metric-card:hover {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  transform: translateY(-4px);
+}
+
+.metric-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.metric-info {
+  flex: 1;
+}
+
+.metric-label {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0 0 4px 0;
+  font-weight: 500;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.api-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+  gap: 24px;
+  padding: 32px;
+}
+
+.api-chart-card {
+  background: rgba(59, 130, 246, 0.05);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.api-chart-card h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 20px;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 300px;
+}
+
+.chart-wrapper canvas {
+  max-height: 100%;
+}
+
+/* Large tablet */
+@media (max-width: 1200px) {
+  .api-metrics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+}
+
+/* Tablet */
+@media (max-width: 968px) {
+  .api-charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .api-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .metric-value {
+    font-size: 22px;
+  }
+}
+
+/* Mobile landscape */
+@media (max-width: 768px) {
+  .api-usage-modal-overlay {
+    padding: 10px;
+  }
+
+  .api-modal-header h2 {
+    font-size: 24px;
+  }
+
+  .api-metrics-grid {
+    padding: 24px;
+  }
+
+  .api-charts-grid {
+    padding: 24px;
+  }
+
+  .metric-icon {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* Mobile portrait */
+@media (max-width: 640px) {
+  .api-usage-modal-content {
+    margin: 10px;
+    border-radius: 16px;
+  }
+
+  .api-modal-header {
+    padding: 32px 20px 24px;
+  }
+
+  .api-modal-header h2 {
+    font-size: 20px;
+  }
+
+  .api-modal-header p {
+    font-size: 14px;
+  }
+
+  .api-metrics-grid {
+    grid-template-columns: 1fr;
+    padding: 20px;
+    gap: 12px;
+  }
+
+  .api-metric-card {
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .metric-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .metric-label {
+    font-size: 12px;
+  }
+
+  .metric-value {
+    font-size: 20px;
+  }
+
+  .api-charts-grid {
+    grid-template-columns: 1fr;
+    padding: 20px;
+    gap: 20px;
+  }
+
+  .api-chart-card {
+    padding: 20px;
+  }
+
+  .api-chart-card h3 {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+
+  .chart-wrapper {
+    height: 220px;
+  }
+
+  .api-modal-close {
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 375px) {
+  .api-modal-header h2 {
+    font-size: 18px;
+  }
+
+  .api-metrics-grid {
+    padding: 16px;
+  }
+
+  .api-charts-grid {
+    padding: 16px;
+  }
+
+  .chart-wrapper {
+    height: 200px;
+  }
+
+  .api-metric-card {
+    flex-direction: column;
+    text-align: center;
+  }
+}

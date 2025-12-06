@@ -585,6 +585,18 @@
   gap: 6px;
 }
 
+.btn-small:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #475569;
+  color: #94a3b8;
+}
+
+.btn-small:disabled:hover {
+  background: #475569;
+  transform: none;
+}
+
 .edit-panel {
   background: #27374d;
   padding: 16px;
@@ -993,6 +1005,28 @@
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .create-video-container,
+  .previous-work-container,
+  .billing-container,
+  .usage-container,
+  .settings-container {
+    max-width: 100%;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .projects-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .bills-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 768px) {
   .stats-grid,
   .activity-grid,
@@ -1006,5 +1040,170 @@
   
   .projects-grid {
     grid-template-columns: 1fr;
+  }
+  
+  .upload-zone {
+    padding: 40px 20px;
+  }
+  
+  .upload-text {
+    font-size: 16px;
+  }
+  
+  .upload-subtext {
+    font-size: 13px;
+  }
+  
+  .form-input,
+  .form-textarea,
+  .form-select {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+  
+  .section-title {
+    font-size: 20px;
+  }
+  
+  .page-title {
+    font-size: 24px;
+  }
+  
+  .stat-card {
+    padding: 16px;
+  }
+  
+  .stat-value {
+    font-size: 24px;
+  }
+  
+  .project-card {
+    padding: 16px;
+  }
+  
+  .project-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .btn-icon {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  
+  .pricing-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .pricing-card {
+    padding: 20px 16px;
+  }
+  
+  .popular-badge,
+  .active-plan-badge {
+    font-size: 11px;
+    padding: 5px 12px;
+    top: -10px;
+  }
+  
+  .plan-button {
+    font-size: 13px;
+    padding: 12px;
+  }
+  
+  .modal-content {
+    width: 95%;
+    margin: 20px auto;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .upload-zone {
+    padding: 30px 16px;
+  }
+  
+  .upload-text {
+    font-size: 15px;
+  }
+  
+  .upload-subtext {
+    font-size: 12px;
+  }
+  
+  .upload-hint {
+    font-size: 11px;
+  }
+  
+  .page-title {
+    font-size: 20px;
+  }
+  
+  .section-title {
+    font-size: 18px;
+  }
+  
+  .form-input,
+  .form-textarea,
+  .form-select {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+  
+  .btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  
+  .stat-card {
+    padding: 14px;
+  }
+  
+  .stat-value {
+    font-size: 20px;
+  }
+  
+  .stat-label {
+    font-size: 12px;
+  }
+  
+  .project-card {
+    padding: 14px;
+  }
+  
+  .project-title {
+    font-size: 14px;
+  }
+  
+  .project-prompt {
+    font-size: 12px;
+  }
+  
+  .btn-icon {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+  
+  .pricing-card {
+    padding: 20px;
+  }
+  
+  .price {
+    font-size: 32px;
+  }
+  
+  .feature {
+    font-size: 13px;
+  }
+  
+  .modal-content {
+    width: 100%;
+    margin: 10px;
+    padding: 20px;
+  }
+  
+  .modal-title {
+    font-size: 18px;
   }
 }

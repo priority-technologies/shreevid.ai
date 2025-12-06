@@ -9,8 +9,8 @@ const path = require('path');
 
 class GoogleTTSService {
   constructor() {
-    this.projectId = process.env.GOOGLE_TTS_PROJECT_ID;
-    this.keyFile = process.env.GOOGLE_TTS_KEY_FILE || './credentials/google-tts-service-account.json';
+    this.projectId = process.env.GOOGLE_CLOUD_PROJECT || process.env.GOOGLE_TTS_PROJECT_ID;
+    this.keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS || process.env.GOOGLE_TTS_KEY_FILE || './credentials/google-tts-service-account.json';
     this.languageCode = process.env.GOOGLE_TTS_LANGUAGE_CODE || 'en-US';
     this.encoding = process.env.GOOGLE_TTS_ENCODING || 'MP3';
     this.audioRate = process.env.GOOGLE_TTS_AUDIO_RATE || 24000;
@@ -18,13 +18,17 @@ class GoogleTTSService {
 
     // Check if credentials file exists
     if (!fs.existsSync(this.keyFile)) {
-      throw new Error(`Google TTS credentials not found at: ${this.keyFile}`);
+      console.warn(`[GoogleTTS] ⚠️  Credentials file not found at: ${this.keyFile}`);
+      console.warn(`[GoogleTTS] ℹ️  Using Application Default Credentials or environment variables`);
     }
 
     // Initialize client with service account
-    this.client = new textToSpeech.TextToSpeechClient({
-      keyFilename: this.keyFile
-    });
+    let clientOptions = {};
+    if (fs.existsSync(this.keyFile)) {
+      clientOptions.keyFilename = this.keyFile;
+    }
+    
+    this.client = new textToSpeech.TextToSpeechClient(clientOptions);
 
     // Voice options: Neural2 (premium), Standard (basic)
     this.voices = {
@@ -33,6 +37,8 @@ class GoogleTTSService {
       'female': 'en-US-Neural2-E',     // Female voice
       'robotic': 'en-US-Standard-A'    // Standard (less natural)
     };
+
+    console.log('[GoogleTTS] ✅ Text-to-Speech Service initialized');
   }
 
   /**

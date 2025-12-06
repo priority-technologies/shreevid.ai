@@ -1,38 +1,53 @@
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Upload, Loader, Sparkles, PartyPopper, AlertCircle, Zap } from 'lucide-react';
-import '../styles/Components.css';
+import { useState, useEffect } from "react";
+import axios from "axios";
+import {
+  Upload,
+  Loader,
+  Sparkles,
+  PartyPopper,
+  AlertCircle,
+  Zap,
+} from "lucide-react";
 
-const API_BASE_URL = 'http://localhost:5000/api';
-const CREDIT_COST = 125; // Cost per video generation
+import "../styles/Components.css";
+import UpgradeModal from "./UpgradeModal";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+const CREDIT_COST = 65; // Cost per 5-second video generation
 
 export default function CreateVideo() {
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [prompt, setPrompt] = useState('');
-  const [voice, setVoice] = useState('default');
+  const [prompt, setPrompt] = useState("");
+  const [voice, setVoice] = useState("default");
   const [backgroundNoise, setBackgroundNoise] = useState(0);
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [showCelebration, setShowCelebration] = useState(false);
-  const [success, setSuccess] = useState('');
-  const [error, setError] = useState('');
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
   const [credits, setCredits] = useState(null);
   const [showPurchasePrompt, setShowPurchasePrompt] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   useEffect(() => {
     fetchCredits();
+    
+    // Refresh credits every 10 seconds to stay updated
+    const interval = setInterval(fetchCredits, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   const fetchCredits = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await axios.get(`${API_BASE_URL}/credits/balance`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setCredits(response.data.credits);
-    } catch (error) {
-      console.error('Error fetching credits:', error);
+    } catch (fetchError) {
+      console.error("Error fetching credits:", fetchError);
     }
   };
 
@@ -50,19 +65,21 @@ export default function CreateVideo() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
     setShowPurchasePrompt(false);
 
-    // Check credits before proceeding
     if (credits < CREDIT_COST) {
-      setError(`Insufficient credits. You have ${credits} but need ${CREDIT_COST}.`);
+      setError(
+        `Insufficient credits. You have ${credits} but need ${CREDIT_COST}.`,
+      );
       setShowPurchasePrompt(true);
+      setShowUpgradeModal(true); // Show upgrade modal
       return;
     }
 
     if (!image || !prompt) {
-      setError('Please upload an image and enter a prompt');
+      setError("Please upload an image and enter a prompt");
       return;
     }
 
@@ -72,19 +89,18 @@ export default function CreateVideo() {
 
     try {
       const formData = new FormData();
-      formData.append('image', image);
-      formData.append('prompt', prompt);
+      formData.append("image", image);
+      formData.append("prompt", prompt);
       formData.append(
-        'voiceSettings',
+        "voiceSettings",
         JSON.stringify({
           voice,
-          backgroundNoise: parseInt(backgroundNoise),
-        })
+          backgroundNoise: parseInt(backgroundNoise, 10),
+        }),
       );
 
-      // Simulate progress
       const progressInterval = setInterval(() => {
-        setProgress(prev => {
+        setProgress((prev) => {
           if (prev >= 95) {
             clearInterval(progressInterval);
             return 95;
@@ -93,44 +109,53 @@ export default function CreateVideo() {
         });
       }, 500);
 
-      const token = localStorage.getItem('token');
-      const response = await axios.post(`${API_BASE_URL}/projects/create`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${token}`,
+      const token = localStorage.getItem("token");
+      const response = await axios.post(
+        `${API_BASE_URL}/projects/create`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
         },
-      });
+      );
 
       clearInterval(progressInterval);
       setProgress(100);
 
-      // Update credits
       if (response.data.remainingCredits !== undefined) {
         setCredits(response.data.remainingCredits);
+      } else {
+        // Refresh credits after successful submission
+        fetchCredits();
       }
 
-      // Show celebration effect
       setTimeout(() => {
         setShowCelebration(true);
-        setSuccess('🎉 Your video is ready! Kindly go to Knowledge Center section to watch.');
-        
-        // Reset form
+        setSuccess(
+          "🎉 Video generation started! Check it in Previous Work tab.",
+        );
+
         setTimeout(() => {
           setImage(null);
           setImagePreview(null);
-          setPrompt('');
-          setVoice('default');
+          setPrompt("");
+          setVoice("default");
           setBackgroundNoise(0);
           setProgress(0);
           setShowCelebration(false);
+          setSuccess("");
         }, 5000);
       }, 500);
-
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create video');
+      clearInterval(progressInterval);
+      setError(err.response?.data?.error || "Failed to create video");
       setProgress(0);
-      // If insufficient credits error, show purchase prompt
-      if (err.response?.data?.error?.includes('Insufficient credits')) {
+      setShowCelebration(false);
+      setSuccess("");
+
+      if (err.response?.data?.error?.includes("Insufficient credits")) {
         setShowPurchasePrompt(true);
       }
     } finally {
@@ -140,13 +165,14 @@ export default function CreateVideo() {
 
   return (
     <div className="create-video-container">
-      {/* Celebration Effect */}
       {showCelebration && (
         <div className="celebration-overlay">
           <div className="celebration-content">
             <PartyPopper size={80} className="celebration-icon" />
             <h2 className="celebration-title">Success!</h2>
-            <p className="celebration-text">Your video is ready, kindly go to Knowledge Center section to watch.</p>
+            <p className="celebration-text">
+              Your video is being generated! Check the Previous Work tab to view it.
+            </p>
             <div className="balloons">
               <div className="balloon balloon-1">🎈</div>
               <div className="balloon balloon-2">🎈</div>
@@ -165,15 +191,16 @@ export default function CreateVideo() {
 
       <div className="page-header">
         <h2 className="page-title">Create Video</h2>
-        <p className="page-subtitle">Upload an image and describe your vision</p>
+        <p className="page-subtitle">
+          Upload an image and describe your vision
+        </p>
       </div>
 
       <div className="card">
         <form onSubmit={handleSubmit}>
-          {/* Image Upload */}
           <div
             className="upload-zone"
-            onClick={() => document.getElementById('image-upload').click()}
+            onClick={() => document.getElementById("image-upload").click()}
           >
             <Upload size={48} className="upload-icon" />
             <p className="upload-text">Click to upload image</p>
@@ -184,7 +211,7 @@ export default function CreateVideo() {
               type="file"
               accept="image/*"
               onChange={handleImageChange}
-              style={{ display: 'none' }}
+              style={{ display: "none" }}
             />
           </div>
 
@@ -193,14 +220,20 @@ export default function CreateVideo() {
               <img
                 src={imagePreview}
                 alt="Preview"
-                style={{ width: '60px', height: '60px', borderRadius: '8px', objectFit: 'cover' }}
+                style={{
+                  width: "60px",
+                  height: "60px",
+                  borderRadius: "8px",
+                  objectFit: "cover",
+                }}
               />
-              <p className="file-selected-text">✓ Image selected: {image?.name}</p>
+              <p className="file-selected-text">
+                ✓ Image selected: {image?.name}
+              </p>
             </div>
           )}
 
-          {/* Prompt */}
-          <div className="form-field" style={{ gridColumn: '1 / -1' }}>
+          <div className="form-field" style={{ gridColumn: "1 / -1" }}>
             <label className="form-label">Video Prompt</label>
             <textarea
               value={prompt}
@@ -210,7 +243,6 @@ export default function CreateVideo() {
             />
           </div>
 
-          {/* Voice & Noise Settings */}
           <div className="form-grid">
             <div className="form-field">
               <label className="form-label">Voice Style</label>
@@ -227,7 +259,9 @@ export default function CreateVideo() {
             </div>
 
             <div className="form-field">
-              <label className="form-label">Background Noise: {backgroundNoise}%</label>
+              <label className="form-label">
+                Background Noise: {backgroundNoise}%
+              </label>
               <input
                 type="range"
                 min="0"
@@ -239,7 +273,6 @@ export default function CreateVideo() {
             </div>
           </div>
 
-          {/* Messages */}
           {error && (
             <div className="alert alert-error">
               <AlertCircle size={18} />
@@ -249,7 +282,9 @@ export default function CreateVideo() {
                   <button
                     type="button"
                     className="btn-link"
-                    onClick={() => window.location.hash = '#settings'}
+                    onClick={() => {
+                      window.location.hash = "#settings";
+                    }}
                   >
                     Purchase credits now →
                   </button>
@@ -257,30 +292,37 @@ export default function CreateVideo() {
               </div>
             </div>
           )}
+
           {success && <div className="alert alert-success">{success}</div>}
 
-          {/* Credit Cost Info */}
           {credits !== null && (
-            <div className={`credit-info ${credits < CREDIT_COST ? 'insufficient' : ''}`}>
+            <div
+              className={`credit-info ${credits < CREDIT_COST ? "insufficient" : ""}`}
+            >
               <Zap size={16} />
-              <span>Cost: <strong>{CREDIT_COST}</strong> credits</span>
-              <span className={`balance ${credits < CREDIT_COST ? 'low' : 'ok'}`}>
+              <span>
+                Cost: <strong>{CREDIT_COST}</strong> credits
+              </span>
+              <span
+                className={`balance ${credits < CREDIT_COST ? "low" : "ok"}`}
+              >
                 Your balance: <strong>{credits}</strong>
               </span>
             </div>
           )}
 
-          {/* Progress Bar */}
           {loading && (
             <div className="progress-container">
               <div className="progress-bar-wrapper">
-                <div className="progress-bar-fill" style={{ width: `${progress}%` }}></div>
+                <div
+                  className="progress-bar-fill"
+                  style={{ width: `${progress}%` }}
+                ></div>
               </div>
               <p className="progress-text">{Math.round(progress)}% Complete</p>
             </div>
           )}
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading || (credits !== null && credits < CREDIT_COST)}
@@ -305,6 +347,18 @@ export default function CreateVideo() {
           </button>
         </form>
       </div>
+      
+      {/* Upgrade Modal */}
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)}
+        onUpgrade={() => {
+          setShowUpgradeModal(false);
+          // Navigate to Settings tab - trigger event
+          const settingsTab = document.querySelector('[data-page="settings"]');
+          if (settingsTab) settingsTab.click();
+        }}
+      />
     </div>
   );
 }

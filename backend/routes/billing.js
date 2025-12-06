@@ -49,16 +49,23 @@ router.get('/history', verifyToken, async (req, res) => {
 // GET USAGE STATS
 router.get('/usage', verifyToken, async (req, res) => {
   try {
+    const User = require('../models/User');
+    const user = await User.findById(req.userId);
     const usage = await Usage.findOne({ userId: req.userId });
 
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
     res.json({
-      totalCreditsUsed: usage.totalCreditsUsed,
-      creditsRemaining: usage.creditsRemaining,
-      monthlyUsage: usage.monthlyUsage,
-      dailyUsage: usage.dailyUsage,
-      videoGenerationCount: usage.videoGenerationCount,
-      voiceEditingCount: usage.voiceEditingCount,
-      lastResetDate: usage.lastResetDate,
+      totalCreditsUsed: user.totalCreditsSpent || 0,
+      creditsRemaining: user.credits || 0,
+      totalCreditsEarned: user.totalCreditsEarned || 0,
+      monthlyUsage: usage?.monthlyUsage || 0,
+      dailyUsage: usage?.dailyUsage || 0,
+      videoGenerationCount: usage?.videoGenerationCount || 0,
+      voiceEditingCount: usage?.voiceEditingCount || 0,
+      lastResetDate: usage?.lastResetDate || user.createdAt,
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
