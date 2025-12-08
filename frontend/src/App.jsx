@@ -16,13 +16,10 @@ import CookiePolicy from "./pages/CookiePolicy";
 import AcceptableUse from "./pages/AcceptableUse";
 import HelpCenter from "./pages/HelpCenter";
 import Signup from "./pages/Signup";
-
 import Login from "./pages/Login";
-
+import AuthCallback from "./pages/AuthCallback";
 import ForgotPassword from "./pages/ForgotPassword";
-
 import Dashboard from "./pages/Dashboard";
-
 import AdminDashboard from "./pages/AdminDashboard";
 
 import "./App.css";
@@ -79,6 +76,7 @@ function App() {
           <Route path="/help-center" element={<HelpCenter />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />

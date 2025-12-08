@@ -3,8 +3,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const { v4: uuidv4 } = require('uuid');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const User = require('../models/User');
 const Usage = require('../models/Usage');
+const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -266,6 +269,116 @@ router.post('/reset-password', async (req, res) => {
     await user.save();
 
     res.json({ message: 'Password reset successfully. Please login with new password.' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ========================================
+// GOOGLE OAUTH CONFIGURATION
+// ========================================
+
+// Configure Google OAuth Strategy
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:5000/api/auth/google/callback"
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+      // Check if user already exists
+      let user = await User.findOne({ email: profile.emails[0].value });
+
+      if (user) {
+        // User exists - update Google profile info
+        user.googleId = profile.id;
+        user.authProvider = 'google';
+        user.emailVerified = true; // Google emails are pre-verified
+        if (profile.photos && profile.photos.length > 0) {
+          user.profilePicture = profile.photos[0].value;
+        }
+        await user.save();
+      } else {
+        // Create new user
+        const isAdminEmail = ADMIN_EMAILS.includes(profile.emails[0].value.toLowerCase());
+        
+        user = new User({
+          googleId: profile.id,
+          email: profile.emails[0].value,
+          firstName: profile.name.givenName || '',
+          lastName: profile.name.familyName || '',
+          profilePicture: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : '',
+          authProvider: 'google',
+          emailVerified: true, // Google emails are pre-verified
+          isAdmin: isAdminEmail,
+          role: isAdminEmail ? 'admin' : 'user',
+          password: await bcrypt.hash(uuidv4(), 10), // Random password for Google users
+        });
+
+        await user.save();
+
+        // Create usage record
+        await Usage.create({ userId: user._id });
+      }
+
+      return done(null, user);
+    } catch (error) {
+      return done(error, null);
+    }
+  }
+));
+
+// Serialize user for session
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+// Deserialize user from session
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (error) {
+    done(error, null);
+  }
+});
+
+// Google OAuth Routes
+router.get('/google',
+  passport.authenticate('google', { 
+    scope: ['profile', 'email'] 
+  })
+);
+
+router.get('/google/callback',
+  passport.authenticate('google', { 
+    failureRedirect: process.env.FRONTEND_URL + '/#/login?error=google_auth_failed',
+    session: false 
+  }),
+  async (req, res) => {
+    try {
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: req.user._id, email: req.user.email },
+        process.env.JWT_SECRET || 'your-secret-key',
+        { expiresIn: '30d' }
+      );
+
+      // Redirect to frontend with token
+      const frontendURL = process.env.FRONTEND_URL || 'http://localhost:5173';
+      res.redirect(`${frontendURL}/#/auth/callback?token=${token}`);
+    } catch (error) {
+      console.error('Google OAuth callback error:', error);
+      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/#/login?error=auth_failed`);
+    }
+  }
+);
+
+// Get current user (for OAuth callback)
+router.get('/me', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).select('-password');
+    res.json({ user });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
