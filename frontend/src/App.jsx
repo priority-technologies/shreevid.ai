@@ -9,6 +9,12 @@ import { useEffect, useState } from "react";
 
 import LandingPage from "./pages/LandingPage";
 import Pricing from "./pages/Pricing";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import RefundPolicy from "./pages/RefundPolicy";
+import CookiePolicy from "./pages/CookiePolicy";
+import AcceptableUse from "./pages/AcceptableUse";
+import HelpCenter from "./pages/HelpCenter";
 import Signup from "./pages/Signup";
 
 import Login from "./pages/Login";
@@ -65,6 +71,12 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="/refund-policy" element={<RefundPolicy />} />
+          <Route path="/cookie-policy" element={<CookiePolicy />} />
+          <Route path="/acceptable-use" element={<AcceptableUse />} />
+          <Route path="/help-center" element={<HelpCenter />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

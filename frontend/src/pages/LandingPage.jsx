@@ -707,15 +707,15 @@ export default function LandingPage() {
           </div>
           <div className="footer-section">
             <h4>Legal</h4>
-            <a href="#">Privacy Policy</a>
-            <a href="#">Terms of Service</a>
-            <a href="#">Refund Policy</a>
-            <a href="#">Cookie Policy</a>
-            <a href="#">Acceptable Use</a>
+            <button onClick={() => navigate('/privacy-policy')} className="footer-link">Privacy Policy</button>
+            <button onClick={() => navigate('/terms-of-service')} className="footer-link">Terms of Service</button>
+            <button onClick={() => navigate('/refund-policy')} className="footer-link">Refund Policy</button>
+            <button onClick={() => navigate('/cookie-policy')} className="footer-link">Cookie Policy</button>
+            <button onClick={() => navigate('/acceptable-use')} className="footer-link">Acceptable Use</button>
           </div>
           <div className="footer-section">
             <h4>Support</h4>
-            <a href="#">Help Center</a>
+            <button onClick={() => navigate('/help-center')} className="footer-link">Help Center</button>
             <a href="#">Community</a>
             <a href="#">Status</a>
             <a href="#">Report Bug</a>
