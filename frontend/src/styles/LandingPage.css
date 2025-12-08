@@ -161,6 +161,41 @@
   box-shadow: 0 0 20px rgba(230, 53, 137, 0.8);
 }
 
+.nav-link-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s ease;
+  padding: 10px 0;
+}
+
+.nav-link-btn::after {
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #7800da, #e63589, #fe0307);
+  transition: width 0.4s ease, box-shadow 0.4s ease;
+  border-radius: 2px;
+}
+
+.nav-link-btn:hover {
+  color: #ff69b4;
+  transform: translateY(-1px);
+}
+
+.nav-link-btn:hover::after {
+  width: 100%;
+  box-shadow: 0 0 20px rgba(230, 53, 137, 0.8);
+}
+
 .btn-nav-login {
   background: transparent;
   border: 1.5px solid rgba(120, 0, 218, 0.4);

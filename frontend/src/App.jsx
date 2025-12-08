@@ -8,7 +8,7 @@ import {
 import { useEffect, useState } from "react";
 
 import LandingPage from "./pages/LandingPage";
-
+import Pricing from "./pages/Pricing";
 import Signup from "./pages/Signup";
 
 import Login from "./pages/Login";
@@ -62,16 +62,15 @@ function App() {
       />{" "}
       {/* Router */}{" "}
       <Router>
-        {" "}
         <Routes>
-          {" "}
-          <Route path="/" element={<LandingPage />} />{" "}
-          <Route path="/signup" element={<Signup />} />{" "}
-          <Route path="/login" element={<Login />} />{" "}
-          <Route path="/forgot-password" element={<ForgotPassword />} />{" "}
-          <Route path="/dashboard" element={<Dashboard />} />{" "}
-          <Route path="/admin" element={<AdminDashboard />} />{" "}
-        </Routes>{" "}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Routes>
       </Router>{" "}
     </>
   );

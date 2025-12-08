@@ -302,9 +302,12 @@ export default function LandingPage() {
             <a href="#features" onClick={() => setMobileMenuOpen(false)}>
               Features
             </a>
-            <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>
+            <button
+              onClick={() => {navigate("/pricing"); setMobileMenuOpen(false);}}
+              className="nav-link-btn"
+            >
               Pricing
-            </a>
+            </button>
             <a href="#testimonials" onClick={() => setMobileMenuOpen(false)}>
               Testimonials
             </a>

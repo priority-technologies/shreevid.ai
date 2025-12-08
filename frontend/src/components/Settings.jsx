@@ -8,8 +8,10 @@ import {
   TrendingUp,
   DollarSign,
   Check,
+  ShoppingCart,
 } from "lucide-react";
 import PaymentModal from "./PaymentModal";
+import BuyCreditsModal from "./BuyCreditsModal";
 import "../styles/Settings.css";
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
@@ -18,6 +20,7 @@ export default function Settings() {
   const [credits, setCredits] = useState(null);
   const [pricing, setPricing] = useState([]);
   const [transactions, setTransactions] = useState([]);
+  const [showBuyCreditsModal, setShowBuyCreditsModal] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -113,38 +116,38 @@ export default function Settings() {
       {activeTab === "credits" && (
         <div className="settings-content">
           {" "}
-          {/* Credit Balance Card */}{" "}
+          {/* Credit Balance Card */}
           <div className="credit-balance-card">
-            {" "}
             <div className="balance-header">
-              {" "}
               <div>
-                {" "}
-                <h3>Available Credits</h3>{" "}
+                <h3>Available Credits</h3>
                 <p className="balance-subtitle">
                   Use credits to generate videos
-                </p>{" "}
-              </div>{" "}
+                </p>
+              </div>
               <div className="balance-icon">
-                {" "}
-                <Zap size={32} />{" "}
-              </div>{" "}
-            </div>{" "}
-            <div className="balance-amount">{credits?.credits || 0}</div>{" "}
+                <Zap size={32} />
+              </div>
+            </div>
+            <div className="balance-amount">{credits?.credits || 0}</div>
             <div className="balance-stats">
-              {" "}
               <div className="balance-stat">
-                {" "}
-                <TrendingUp size={16} />{" "}
-                <span>Total Earned: {credits?.totalEarned || 0}</span>{" "}
-              </div>{" "}
+                <TrendingUp size={16} />
+                <span>Total Earned: {credits?.totalEarned || 0}</span>
+              </div>
               <div className="balance-stat">
-                {" "}
-                <DollarSign size={16} />{" "}
-                <span>Total Spent: {credits?.totalSpent || 0}</span>{" "}
-              </div>{" "}
-            </div>{" "}
-          </div>{" "}
+                <DollarSign size={16} />
+                <span>Total Spent: {credits?.totalSpent || 0}</span>
+              </div>
+            </div>
+            <button 
+              className="buy-credits-btn-main"
+              onClick={() => setShowBuyCreditsModal(true)}
+            >
+              <ShoppingCart size={20} />
+              Buy More Credits
+            </button>
+          </div>
           {/* Pricing Plans */}{" "}
           <h3 className="section-title">Purchase Credits</h3>{" "}
           <div className="pricing-grid">
@@ -319,7 +322,7 @@ export default function Settings() {
           </div>{" "}
         </div>
       )}{" "}
-      {/* Payment Modal */}{" "}
+      {/* Payment Modal */}
       {selectedPackage && (
         <PaymentModal
           isOpen={showPaymentModal}
@@ -330,7 +333,14 @@ export default function Settings() {
           packageInfo={selectedPackage}
           onSuccess={handlePaymentSuccess}
         />
-      )}{" "}
+      )}
+
+      {/* Buy Credits Modal */}
+      <BuyCreditsModal
+        isOpen={showBuyCreditsModal}
+        onClose={() => setShowBuyCreditsModal(false)}
+        currentCredits={credits?.credits || 0}
+      />
     </div>
   );
 }
