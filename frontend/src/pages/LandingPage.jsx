@@ -700,10 +700,10 @@ export default function LandingPage() {
           <div className="footer-section">
             <h4>Product</h4>
             <a href="#features">Features</a>
-            <a href="#pricing">Pricing</a>
-            <a href="/dashboard">Dashboard</a>
+            <button onClick={() => navigate('/pricing')} className="footer-link">Pricing</button>
+            <button onClick={() => navigate('/dashboard')} className="footer-link">Dashboard</button>
             <a href="#faq">FAQ</a>
-            <a href="#">API Docs</a>
+            <a href="#" className="footer-disabled">API Docs</a>
           </div>
           <div className="footer-section">
             <h4>Legal</h4>
@@ -716,9 +716,9 @@ export default function LandingPage() {
           <div className="footer-section">
             <h4>Support</h4>
             <button onClick={() => navigate('/help-center')} className="footer-link">Help Center</button>
-            <a href="#">Community</a>
-            <a href="#">Status</a>
-            <a href="#">Report Bug</a>
+            <a href="#" className="footer-disabled">Community</a>
+            <a href="#" className="footer-disabled">Status</a>
+            <a href="#" className="footer-disabled">Report Bug</a>
             <a href="mailto:support@shreevid.ai">Contact Support</a>
           </div>
         </div>
